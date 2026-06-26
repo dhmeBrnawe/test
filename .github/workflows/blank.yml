@@ -48,5 +48,8 @@ jobs:
       - name: Build the app
         run: npm run compile -- -p never
 
+      - name: Patch
+        run: cp ./this/patch.ts tests/e2e.spec.ts
+
       - name: Run UI e2e tests
         run: npm run test
