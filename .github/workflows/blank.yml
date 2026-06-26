@@ -54,4 +54,9 @@ jobs:
         run: cp ./this/patch.ts tests/e2e.spec.ts
 
       - name: Run UI e2e tests
-        run: npm run test
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test
+          else
+            npm run test
+          fi
