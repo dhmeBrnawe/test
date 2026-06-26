@@ -25,6 +25,7 @@ jobs:
         os:
           - windows-latest
           - macos-latest
+          - macos-15-intel
 
     runs-on: ${{ matrix.os }}
 
