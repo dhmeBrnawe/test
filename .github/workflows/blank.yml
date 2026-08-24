@@ -1,4 +1,4 @@
-name: Compile and test the app
+name: Take screenshots
 
 on:
   workflow_dispatch:
@@ -8,55 +8,45 @@ defaults:
     shell: "bash"
 
 env:
-  NODE_NO_WARNINGS: 1
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-  npm_config_fund: false
-  USE_HARD_LINKS: false
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
 jobs:
-  compile-and-test:
+  take-screenshots:
     permissions:
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - windows-latest
-          - macos-latest
-          - macos-15-intel
-          - ubuntu-latest
-
-    runs-on: ${{ matrix.os }}
-
+      contents: write
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout the repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
         with:
-          repository: "AbdulrhmanGoni/denokv-gui-client"
-          ref: "main"
+          repository: AbdulrhmanGoni/denokv-gui-client
+          ref: main
 
-      - uses: actions/checkout@v6
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
-          path: "./this"
-          
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+          version: "11.15.1"
+
+      - name: Setup a Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "24.15.0"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build the app
-        run: npm run compile -- -p never
-
-      - name: Patch
-        run: cp ./this/patch.ts tests/e2e.spec.ts
-
-      - name: Run UI e2e tests
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- npm run test
-          else
-            npm run test
-          fi
+          pnpm run build
+          pnpm run compile:ci
+
+      - name: Take screenshots
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- pnpm run screenshots
+      
+      - name: Upload screenshots
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: screenshots
+          path: screenshots/SettingsPage_*.png
